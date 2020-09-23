@@ -98,7 +98,7 @@ def augment_points(points):
 
 
 # Crop board into separate images and write to folder
-def write_crop_images(img, points, img_count=0, folder_path='./data/raw_data/'):
+def write_crop_images(img, points, img_count=0, folder_path='./Data/raw_data/'):
     num_list = []
     shape = list(np.shape(points))
     start_point = shape[0] - 14
@@ -125,7 +125,7 @@ def write_crop_images(img, points, img_count=0, folder_path='./data/raw_data/'):
                 start_y = 0
             cropped = img[start_y: end_y, start_x: end_x]
             img_count += 1
-            cv2.imwrite('./raw_data/data_image' + str(img_count) + '.jpeg', cropped)
+            cv2.imwrite('./Data/raw_data/data_image' + str(img_count) + '.jpeg', cropped)
             # print(folder_path + 'data' + str(img_count) + '.jpeg')
     return img_count
 
@@ -190,7 +190,7 @@ def natural_keys(text):
     return [atoi(c) for c in re.split('(\d+)', text)]
 
 
-def grab_cell_files(folder_name='./raw_data/*'):
+def grab_cell_files(folder_name='./Data/raw_data/*'):
     img_filename_list = []
     for path_name in glob.glob(folder_name):
         img_filename_list.append(path_name)
