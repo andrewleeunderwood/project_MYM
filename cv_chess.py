@@ -36,7 +36,7 @@ model = load_model('third_try.h5')
 
 cap = cv2.VideoCapture(0)
 
-start = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR'
+# start = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR'
 blank = '8/8/8/8/8/8/8/8'
 board = fen_to_image(blank)
 board_image = cv2.imread('current_board.png')
@@ -56,7 +56,7 @@ while(True):
         print('Working...')
 
         cv2.imwrite('test_frame.jpeg', frame)
-        img, gray_blur = read_img('test_board.jpeg')
+        img, gray_blur = read_img('test_frame.jpeg')
         edges = canny_edge(gray_blur)
         lines = hough_line(edges)
         h_lines, v_lines = h_v_lines(lines)

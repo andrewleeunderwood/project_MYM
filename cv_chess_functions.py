@@ -7,25 +7,17 @@ from collections import defaultdict
 from statistics import mean
 import chess
 import chess.svg
-import sys
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
 from PIL import Image
-from keras.models import load_model
 import re
 import glob
 import PIL
 
+
 # Read image and do lite image processing
 def read_img(file):
-    img = cv2.imread(str(file), 1)
-
-    W = 1000
-    height, width, depth = img.shape
-    imgScale = W / width
-    newX, newY = img.shape[1] * imgScale, img.shape[0] * imgScale
-    img = cv2.resize(img, (int(newX), int(newY)))
-
+    img = cv2.imread(str(file))
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray_blur = cv2.blur(gray, (5, 5))
     return img, gray_blur
@@ -106,7 +98,7 @@ def augment_points(points):
 
 
 # Crop board into separate images and write to folder
-def write_crop_images(img, points, img_count=0, folder_path='./raw_data/'):
+def write_crop_images(img, points, img_count=0, folder_path='./data/raw_data/'):
     num_list = []
     shape = list(np.shape(points))
     start_point = shape[0] - 14
@@ -120,7 +112,6 @@ def write_crop_images(img, points, img_count=0, folder_path='./raw_data/'):
         start = start_point - (row * 11)
         end = (start_point - 8) - (row * 11)
         num_list.append(range(start, end, -1))
-
 
     for row in num_list:
         for s in row:
