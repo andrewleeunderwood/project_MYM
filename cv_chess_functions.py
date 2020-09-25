@@ -161,6 +161,7 @@ def x_crop_images(img, points):
     return img_list
 
 
+# Convert image from RGB to BGR
 def convert_image_to_bgr_numpy_array(image_path, size=(224, 224)):
     image = PIL.Image.open(image_path).resize(size)
     img_data = np.array(image.getdata(), np.float32).reshape(*size, -1)
@@ -169,27 +170,29 @@ def convert_image_to_bgr_numpy_array(image_path, size=(224, 224)):
     return img_data
 
 
+# Adjust image into (1, 224, 224, 3)
 def prepare_image(image_path):
     im = convert_image_to_bgr_numpy_array(image_path)
 
-    # these subtractions are just mean centering the images
-    # based on known means for different color channels
     im[:, :, 0] -= 103.939
     im[:, :, 1] -= 116.779
     im[:, :, 2] -= 123.68
 
-    im = np.expand_dims(im, axis=0)  # adjust to (1, 224, 224, 3) for generating keras prediction
+    im = np.expand_dims(im, axis=0)
     return im
 
 
+# Changes digits in text to ints
 def atoi(text):
     return int(text) if text.isdigit() else text
 
 
+# Finds the digits in a string
 def natural_keys(text):
     return [atoi(c) for c in re.split('(\d+)', text)]
 
 
+# Reads in the cropped images to a list
 def grab_cell_files(folder_name='./Data/raw_data/*'):
     img_filename_list = []
     for path_name in glob.glob(folder_name):
@@ -198,6 +201,7 @@ def grab_cell_files(folder_name='./Data/raw_data/*'):
     return img_filename_list
 
 
+# Classifies each square and outputs the list in Forsyth-Edwards Notation (FEN)
 def classify_cells(model, img_filename_list):
     category_reference = {0: 'b', 1: 'k', 2: 'n', 3: 'p', 4: 'q', 5: 'r', 6: '1', 7: 'B', 8: 'K', 9: 'N', 10: 'P',
                           11: 'Q', 12: 'R'}
@@ -225,6 +229,7 @@ def classify_cells(model, img_filename_list):
     return fen
 
 
+# Converts the FEN into a PNG file
 def fen_to_image(fen):
     board = chess.Board(fen)
     current_board = chess.svg.board(board=board)
