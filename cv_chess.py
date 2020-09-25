@@ -32,7 +32,7 @@ def natural_keys(text):
     return [atoi(c) for c in re.split('(\d+)', text)]
 
 
-model = load_model('third_try.h5')
+model = load_model('model_VGG16.h5')
 
 cap = cv2.VideoCapture(0)
 
@@ -55,8 +55,8 @@ while(True):
     if cv2.waitKey(1) & 0xFF == ord(' '):
         print('Working...')
 
-        cv2.imwrite('test_frame.jpeg', frame)
-        img, gray_blur = read_img('test_frame.jpeg')
+        cv2.imwrite('frame.jpeg', frame)
+        img, gray_blur = read_img('frame.jpeg')
         edges = canny_edge(gray_blur)
         lines = hough_line(edges)
         h_lines, v_lines = h_v_lines(lines)
