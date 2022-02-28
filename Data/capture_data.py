@@ -8,14 +8,14 @@ def rescale_frame(frame, percent=75):
     return cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
 
 
-cap = cv2.VideoCapture(1)
-
+cap = cv2.VideoCapture(0)
+print(cap)
 capture_num = 0
 
 while(True):
     # Capture frame-by-frame
     ret, frame = cap.read()
-
+    # print(frame)
     # Our operations on the frame come here
     # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     small_frame = rescale_frame(frame)

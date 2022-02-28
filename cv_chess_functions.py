@@ -30,11 +30,14 @@ def canny_edge(img, sigma=0.33):
     upper = int(min(255, (1.0 + sigma) * v))
     edges = cv2.Canny(img, lower, upper)
     return edges
+    # return cv2.Canny(img,50,150,apertureSize = 3)
 
 
 # Hough line detection
 def hough_line(edges, min_line_length=100, max_line_gap=10):
     lines = cv2.HoughLines(edges, 1, np.pi / 180, 125, min_line_length, max_line_gap)
+    if lines is None:
+      return None
     lines = np.reshape(lines, (-1, 2))
     return lines
 
@@ -125,7 +128,7 @@ def write_crop_images(img, points, img_count=0, folder_path='./Data/raw_data/'):
                 start_y = 0
             cropped = img[start_y: end_y, start_x: end_x]
             img_count += 1
-            cv2.imwrite('./Data/raw_data/data_image' + str(img_count) + '.jpeg', cropped)
+            cv2.imwrite(folder_path + str(img_count) + '.jpeg', cropped)
             # print(folder_path + 'data' + str(img_count) + '.jpeg')
     return img_count
 
@@ -241,3 +244,9 @@ def fen_to_image(fen):
     svg = svg2rlg('current_board.svg')
     renderPM.drawToFile(svg, 'current_board.png', fmt="PNG")
     return board
+def undistort(img=None,DIM=(1920, 1080),K=np.array([[  1.08515378e+03,   0.00000000e+00,   9.83885166e+02],
+       [  0.00000000e+00,   1.08781630e+03,   5.36422266e+02],
+       [  0.00000000e+00,   0.00000000e+00,   1.00000000e+00]]),D=np.array([[0.0], [0.0], [0.0], [0.0]])):
+    # h,w = img.shape[:2]
+    map1, map2 = cv2.initUndistortRectifyMap(K, D, np.eye(3), K, DIM, cv2.CV_16SC2)
+    return cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
