@@ -13,8 +13,16 @@ from PIL import Image
 import re
 import glob
 import PIL
-
-
+# points=(p1,p2,p3,p4)
+# ４の点からチャス版のマス目のポイントを得る関数
+def points_by_points(points):
+	h_t_lines = np.linspace(points[0], points[1], 9)
+	h_b_lines = np.linspace(points[2], points[3], 9)
+	retpoints=[]
+	for i in range(0,len(h_t_lines)):
+		_points = np.linspace(h_t_lines[i], h_b_lines[i], 9)
+		retpoints.append(_points)
+	return retpoints
 # Read image and do lite image processing
 def read_img(file):
     img = cv2.imread(str(file))
