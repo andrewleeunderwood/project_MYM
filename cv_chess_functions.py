@@ -13,15 +13,57 @@ from PIL import Image
 import re
 import glob
 import PIL
+def linear_func(x1,y1,x2,y2):
+	a = (y2-y1)/(x2-x1)
+	b=y1-a*x1
+	return {'a':a,'b':b}
+# 線分ABと線分CDの交点を求める関数
+def _calc_cross_point(pointA, pointB, pointC, pointD):
+    cross_point = (0,0)
+    bunbo = (pointB[0] - pointA[0]) * (pointD[1] - pointC[1]) - (pointB[1] - pointA[1]) * (pointD[0] - pointC[0])
+
+    # 直線が平行な場合
+    if (bunbo == 0):
+        return False, cross_point
+
+    vectorAC = ((pointC[0] - pointA[0]), (pointC[1] - pointA[1]))
+    r = ((pointD[1] - pointC[1]) * vectorAC[0] - (pointD[0] - pointC[0]) * vectorAC[1]) / bunbo
+    s = ((pointB[1] - pointA[1]) * vectorAC[0] - (pointB[0] - pointA[0]) * vectorAC[1]) / bunbo
+
+    # rを使った計算の場合
+    distance = ((pointB[0] - pointA[0]) * r, (pointB[1] - pointA[1]) * r)
+    cross_point = (int(pointA[0] + distance[0]), int(pointA[1] + distance[1]))
+
+    # sを使った計算の場合
+    # distance = ((pointD[0] - pointC[0]) * s, (pointD[1] - pointC[1]) * s)
+    # cross_point = (int(pointC[0] + distance[0]), int(pointC[1] + distance[1]))
+
+    return True, cross_point
 # points=(p1,p2,p3,p4)
-# ４の点からチャス版のマス目のポイントを得る関数
-def points_by_points(points):
-	h_t_lines = np.linspace(points[0], points[1], 9)
-	h_b_lines = np.linspace(points[2], points[3], 9)
+# ４の点からチェス盤のマス目のポイントを得る関数
+def points_by_points(points,X=9):
+	print(points)
+	if points[2][0]>points[3][0]:
+		points[2],points[3]=points[3],points[2]
+	# t_l=(math.fabs(points[0][0]-points[1][0])**2+math.fabs(points[0][1]-points[1][1])**2)**0.5
+	# b_l=(math.fabs(points[2][0]-points[3][0])**2+math.fabs(points[2][1]-points[3][1])**2)**0.5
+	# height = (math.fabs(points[0][0]-points[2][0])**2+math.fabs(points[1][1]-points[3][1])**2)**0.5
+	# print('t_l',t_l)
+	# print('b_l',b_l)
+	# print('height',height)
+	# h_a=t_l+b_l/2
+	# s=(t_l/b_l)/height
+	print('s',s)
+	h_t_lines = np.column_stack([np.linspace(points[0][0], points[1][0], X),np.linspace(points[0][1], points[1][1], X)])
+	h_b_lines = np.column_stack([np.linspace(points[2][0], points[3][0], X),np.linspace(points[2][1], points[3][1], X)])
+	h_b_lines=np.sort(h_b_lines,axis=0)
 	retpoints=[]
+	b=math.fabs(points[0][0]-points[1][0])/math.fabs(points[2][0]-points[3][0])
 	for i in range(0,len(h_t_lines)):
-		_points = np.linspace(h_t_lines[i], h_b_lines[i], 9)
+		print(h_t_lines[i][0], h_b_lines[i][0])
+		_points = np.column_stack([np.linspace(h_t_lines[i][0], h_b_lines[i][0], X),np.linspace(h_t_lines[i][1], h_b_lines[i][1], X)])
 		retpoints.append(_points)
+	print(retpoints)
 	return retpoints
 # Read image and do lite image processing
 def read_img(file):

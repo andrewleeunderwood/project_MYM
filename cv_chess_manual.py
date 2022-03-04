@@ -4,7 +4,7 @@ from keras.models import load_model
 import sys
 sys.path.append("./")
 sys.path.append("./Data")
-from cv_chess_functions import (read_img,
+from cv_chess_functions import (points_by_points, read_img,
 															 canny_edge,
 															 hough_line,
 															 h_v_lines,
@@ -25,7 +25,7 @@ def mouse_callback(event, x, y, flags, param):
     global pt
 
     #マウスの左ボタンがクリックされたとき
-    if event == cv2.EVENT_LBUTTONDOWN:
+    if event == cv2.EVENT_LBUTTONDOWN and len(pt)<4:
         print('click!')
         print(x, y)
         print(pt)
@@ -66,25 +66,23 @@ while(True):
 		# Capture frame-by-frame
 		ret, frame = cap.read()
 		# frame = undistort(frame)
-		camera,dist=get_calibration_data()
+		# camera,dist=get_calibration_data()
 		frame = cv2.convertScaleAbs(frame,alpha = 1.1,beta=-30)
-		frame = undistort(img=frame,DIM=(1920, 1080),K=np.array(camera),D=np.array(dist))
-		pts = np.array( [
-[ [0,0], [0,1200], [50, 1200], [350,50] ,[1400,50],[1700,2000],[2000,2000],[2000,0]],
-# [ [0,0], [0,300], [1200, 300], [1200,0] ],
-] )
-		dst = cv2.fillPoly(frame, pts =pts, color=(10,10,10))
+		#魚眼補正
+		# frame = undistort(img=frame,DIM=(1920, 1080),K=np.array(camera),D=np.array(dist))
 		ptl = np.array( pt )
 
 		# frame = dst
 		# Resizes each frame
-		small_frame = rescale_frame(frame)
-		cv2.polylines(small_frame, [ptl] ,False,(200,10,10))
+		# small_frame = rescale_frame(frame)
+		cv2.polylines(frame, [ptl] ,False,(200,10,10))
 		# Display the resulting frame
-		cv2.imshow('live', small_frame)
+		cv2.imshow('live', frame)
 
 		if cv2.waitKey(1) & 0xFF == ord(' '):
-
+				if len(pt)!=4:
+					print('Plese set line')
+					continue
 				print('Working...')
 				# Save the frame to be analyzed
 				cv2.imwrite('frame.jpeg', frame)
@@ -102,16 +100,18 @@ while(True):
 					print("line none")
 					continue
 				# Separate the lines into vertical and horizontal lines
-				h_lines, v_lines = h_v_lines(lines)
+				# h_lines, v_lines = h_v_lines(lines)
 				# Find and cluster the intersecting
-				intersection_points = line_intersections(h_lines, v_lines)
-				for _point in intersection_points:
-					point = (int(_point[0]),int(_point[1]))
-					cv2.drawMarker(frame2, position=point, color=(0, 255, 0))
-				points = cluster_points(intersection_points)
+				# intersection_points = line_intersections(h_lines, v_lines)
+				# for _point in intersection_points:
+				# 	point = (int(_point[0]),int(_point[1]))
+				# 	cv2.drawMarker(frame2, position=point, color=(0, 255, 0))
+				# points = cluster_points(intersection_points)
+				points = points_by_points(pt)
 				for _point in points:
-					point = (int(_point[0]),int(_point[1]))
-					cv2.drawMarker(frame2, position=point, color=(0, 0, 255))
+					for __point in _point:
+						point = (int(__point[0]),int(__point[1]))
+						cv2.drawMarker(frame2, position=point, color=(0, 0, 255))
 				# Final coordinates of the board
 				points = augment_points(points)
 				print(points)
