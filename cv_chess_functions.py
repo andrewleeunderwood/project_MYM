@@ -1,3 +1,4 @@
+from configparser import ExtendedInterpolation
 import math
 import cv2
 import numpy as np
@@ -14,9 +15,9 @@ import re
 import glob
 import PIL
 def linear_func(x1,y1,x2,y2):
-	a = (y2-y1)/(x2-x1)
-	b=y1-a*x1
-	return {'a':a,'b':b}
+    a = (y2-y1)/(x2-x1)
+    b=y1-a*x1
+    return {'a':a,'b':b}
 # 線分ABと線分CDの交点を求める関数
 def _calc_cross_point(pointA, pointB, pointC, pointD):
     cross_point = (0,0)
@@ -42,29 +43,145 @@ def _calc_cross_point(pointA, pointB, pointC, pointD):
 # points=(p1,p2,p3,p4)
 # ４の点からチェス盤のマス目のポイントを得る関数
 def points_by_points(points,X=9):
-	print(points)
-	if points[2][0]>points[3][0]:
-		points[2],points[3]=points[3],points[2]
-	# t_l=(math.fabs(points[0][0]-points[1][0])**2+math.fabs(points[0][1]-points[1][1])**2)**0.5
-	# b_l=(math.fabs(points[2][0]-points[3][0])**2+math.fabs(points[2][1]-points[3][1])**2)**0.5
-	# height = (math.fabs(points[0][0]-points[2][0])**2+math.fabs(points[1][1]-points[3][1])**2)**0.5
-	# print('t_l',t_l)
-	# print('b_l',b_l)
-	# print('height',height)
-	# h_a=t_l+b_l/2
-	# s=(t_l/b_l)/height
-	print('s',s)
-	h_t_lines = np.column_stack([np.linspace(points[0][0], points[1][0], X),np.linspace(points[0][1], points[1][1], X)])
-	h_b_lines = np.column_stack([np.linspace(points[2][0], points[3][0], X),np.linspace(points[2][1], points[3][1], X)])
-	h_b_lines=np.sort(h_b_lines,axis=0)
-	retpoints=[]
-	b=math.fabs(points[0][0]-points[1][0])/math.fabs(points[2][0]-points[3][0])
-	for i in range(0,len(h_t_lines)):
-		print(h_t_lines[i][0], h_b_lines[i][0])
-		_points = np.column_stack([np.linspace(h_t_lines[i][0], h_b_lines[i][0], X),np.linspace(h_t_lines[i][1], h_b_lines[i][1], X)])
-		retpoints.append(_points)
-	print(retpoints)
-	return retpoints
+    print(points)
+    if points[2][0]>points[3][0]:
+        points[2],points[3]=points[3],points[2]
+    # t_l=(math.fabs(points[0][0]-points[1][0])**2+math.fabs(points[0][1]-points[1][1])**2)**0.5
+    # b_l=(math.fabs(points[2][0]-points[3][0])**2+math.fabs(points[2][1]-points[3][1])**2)**0.5
+    # height = (math.fabs(points[0][0]-points[2][0])**2+math.fabs(points[1][1]-points[3][1])**2)**0.5
+    # print('t_l',t_l)
+    # print('b_l',b_l)
+    # print('height',height)
+    # h_a=t_l+b_l/2
+    # s=(t_l/b_l)/height
+    #print('s',s)
+    h_t_lines = np.column_stack([np.linspace(points[0][0], points[1][0], X),np.linspace(points[0][1], points[1][1], X)])
+    h_b_lines = np.column_stack([np.linspace(points[2][0], points[3][0], X),np.linspace(points[2][1], points[3][1], X)])
+    h_b_lines=np.sort(h_b_lines,axis=0)
+    retpoints=[]
+    b=math.fabs(points[0][0]-points[1][0])/math.fabs(points[2][0]-points[3][0])
+    for i in range(0,len(h_t_lines)):
+        print(h_t_lines[i][0], h_b_lines[i][0])
+        _points = np.column_stack([np.linspace(h_t_lines[i][0], h_b_lines[i][0], X),np.linspace(h_t_lines[i][1], h_b_lines[i][1], X)])
+        retpoints.append(_points)
+    print(retpoints)
+    return retpoints
+
+# 角ABCを計算(rad)
+def get_angle(_pointA, _pointB, _pointC):
+    pointA, pointB, pointC = np.array(_pointA,dtype=float), np.array(_pointB,dtype=float), np.array(_pointC,dtype=float)
+    vec_BA = pointA - pointB
+    vec_BC = pointC - pointB
+    cos_ABC = np.inner(vec_BA, vec_BC) / (np.linalg.norm(vec_BA) * np.linalg.norm(vec_BC))
+    return np.arccos(cos_ABC)
+
+# AをOを中心に (反時計回りに)angle度回転
+def rotate(_pointA, _pointO, angle):
+    pointA, pointO = np.array(_pointA,dtype=float), np.array(_pointO,dtype=float)
+    pointA -= pointO
+    pointA = np.array([pointA[0] * np.cos(angle) - pointA[1] * np.sin(angle), pointA[0] * np.sin(angle) + pointA[1] * np.cos(angle)])
+    pointA += pointO
+    return pointA
+
+# 一辺がA-M-B, もう一辺がC-D と並んでいることを仮定 
+def partition_by_ratio(_pointA, _pointB, _pointC, _pointD, _pointM, X=9):
+    pointA, pointB, pointC, pointD, pointM = np.array(_pointA,dtype=float), np.array(_pointB,dtype=float), np.array(_pointC,dtype=float), np.array(_pointD,dtype=float), np.array(_pointM,dtype=float)
+    #infinity_point = np.array(_calc_cross_point(pointA, pointB, pointC, pointD)[1],dtype=float)
+
+    ratio = np.power(np.linalg.norm(pointB - pointM) / np.linalg.norm(pointM - pointA), 0.25)
+    initial = 1.0 * (1.0 - ratio) / (1.0 - np.power(ratio, X - 1))
+    print(pointA,pointB,pointC,pointD,pointM,pointB-pointM,pointM-pointA)
+    print(initial, ratio)
+    ret_lines = np.zeros([9,2,2],dtype=float)
+    vec_sum = 0
+    vec = (pointB - pointA) * initial
+    for i in range(X):
+        ret_lines[i][0] = pointA + vec_sum
+        vec_sum += vec
+        vec *= ratio
+
+    vec_sum = 0
+    vec = (pointD - pointC) * initial
+
+    for i in range(X):
+        ret_lines[i][1] = pointC + vec_sum
+        vec_sum += vec
+        vec *= ratio
+
+    print(ret_lines)
+    return ret_lines
+
+# points=(p1,p2,p3,p4)
+# ４の点からチェス盤のマス目のポイントを得る関数(二点透視図法による)
+# points[0],points[1],points[2]が一列にならんでおり、points[0],points[3],points[4]が一列にならんでおり、points[5]が残りの角である
+def points_by_points_with_twopoint_perspective(points,X=9):
+    print(points)
+    if points[4][0]>points[5][0]:
+        points[4],points[5]=points[5],points[4]
+    
+    horizontal_lines=partition_by_ratio(points[0],points[2],points[4],points[5],points[1],X)
+    vertical_lines=partition_by_ratio(points[0],points[4],points[2],points[5],points[3],X)
+    ret_points = np.zeros([9,9,2])
+    for i in range(X):
+        for j in range(X):
+            ret_points[i][j] = np.array(_calc_cross_point(horizontal_lines[i][0], horizontal_lines[i][1], vertical_lines[j][0], vertical_lines[j][1])[1])
+    print(ret_points)
+    return ret_points
+
+# ４の点からチェス盤のマス目のポイントを得る関数(透視投影行列による)
+def points_by_points_with_perspective_projection(points,P=9):
+    print(points)
+    if points[2][0]>points[3][0]:
+        points[2],points[3]=points[3],points[2]
+    matrix_size = 12
+    coefficient_matrix = np.zeros([matrix_size,matrix_size],dtype=float)
+    extended_matrix = np.zeros([matrix_size,1],dtype=float)
+    for i in range(2):
+        for j in range(2):
+            index = i * 2 + j
+            x = points[index][0]
+            y = points[index][1]
+            X = i * 9.0
+            Y = j * 9.0
+            Z = 1.0
+            print(i,j,index,x,y,X,Y,Z)
+            coefficient_matrix[index * 3][0] = X
+            coefficient_matrix[index * 3][1] = Y
+            coefficient_matrix[index * 3][2] = Z
+            coefficient_matrix[index * 3][3] = 1
+            extended_matrix[index * 3] = x
+            coefficient_matrix[index * 3 + 1][4] = X
+            coefficient_matrix[index * 3 + 1][5] = Y
+            coefficient_matrix[index * 3 + 1][6] = Z
+            coefficient_matrix[index * 3 + 1][7] = 1
+            extended_matrix[index * 3 + 1] = y
+            coefficient_matrix[index * 3 + 2][8] = X
+            coefficient_matrix[index * 3 + 2][9] = Y
+            coefficient_matrix[index * 3 + 2][10] = Z
+            coefficient_matrix[index * 3 + 2][11] = 1
+            extended_matrix[index * 3 + 2] = 1
+    for i in range(12):
+        coefficient_matrix[i][i] += 0.000000001
+    print(coefficient_matrix)
+    print(extended_matrix)
+    answer = np.linalg.solve(coefficient_matrix, extended_matrix)
+    print(answer)
+    print(answer.shape)
+    perspective_projection_matrix = np.reshape(answer,[3, 4])
+    print(perspective_projection_matrix)
+    ret_points = []
+    for i in range(P):
+        for j in range(P):
+            X = i * 9.0
+            Y = j * 9.0
+            Z = 1.0
+            point = perspective_projection_matrix * np.matrix([[X], [Y], [Z], [1]])
+            print(point)
+            ret_points.append(np.array([float(point[0][0]), float(point[1][0])], dtype=float))
+            print(float(point[0][0]))
+    print(ret_points)
+    return ret_points
+
 # Read image and do lite image processing
 def read_img(file):
     img = cv2.imread(str(file))
