@@ -38,7 +38,7 @@ def read_img(file):
 
 	W = 1000
 	height, width, depth = img.shape
-	imgScale = W / width
+	imgScale = width #W / width
 	newX, newY = img.shape[1] * imgScale, img.shape[0] * imgScale
 	img = cv2.resize(img, (int(newX), int(newY)))
 
