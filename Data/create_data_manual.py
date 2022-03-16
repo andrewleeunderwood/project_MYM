@@ -97,13 +97,13 @@ def cluster_points(points):
 def augment_points(points):
 	points_shape = list(np.shape(points))
 	augmented_points = []
-	for row in range(int(points_shape[0] / 11)):
-		start = row * 11
-		end = (row * 11) + 10
+	for row in range(int(points_shape[0] / 9)):
+		start = row * 9
+		end = (row * 9) + 8
 		rw_points = points[start:end + 1]
 		rw_y = []
 		rw_x = []
-		for point in rw_points:
+		for point in points:
 			x, y = point
 			rw_y.append(y)
 			rw_x.append(x)
@@ -116,36 +116,49 @@ def augment_points(points):
 
 
 # Crop board into separate images
-def write_crop_images(img, points, img_count, folder_path='./raw_data/'):
+def write_crop_images(img, points, img_count, folder_path='./raw_data/',X=9):
 				num_list = []
 				shape = list(np.shape(points))
-				start_point = shape[0] - 14
+				start_point = shape[0]
+				print('start_point',start_point)
+				# if int(shape[0] / X) >= 8:
+				# 				range_num = 8
+				# else:
+				# 				range_num = int((shape[0] / X) - 2)
 
-				if int(shape[0] / 11) >= 8:
-								range_num = 8
-				else:
-								range_num = int((shape[0] / 11) - 2)
-
-				for row in range(range_num):
-								start = start_point - (row * 11)
-								end = (start_point - 8) - (row * 11)
-								num_list.append(range(start, end, -1))
+				# for row in range(range_num):
+				# 				start = start_point - (row * X)
+				# 				end = (start_point - 8) - (row * X)
+				# 				num_list.append(range(start, end, -1))
 
 
-				for row in num_list:
-								for s in row:
-												# ratio_h = 2
-												# ratio_w = 1
-												base_len = math.dist(points[s], points[s + 1])
-												bot_left, bot_right = points[s], points[s + 1]
-												start_x, start_y = int(bot_left[0]), int(bot_left[1] - (base_len * 2))
-												end_x, end_y = int(bot_right[0]), int(bot_right[1])
-												if start_y < 0:
-																start_y = 0
-												cropped = img[start_y: end_y, start_x: end_x]
-												img_count += 1
-												cv2.imwrite('./test_data/crop_data_image' + str(img_count) + '.jpeg', cropped)
-												print(folder_path + 'data' + str(img_count) + '.jpeg')
+				for rowi in range(len(points)-1):
+					row = points[rowi]
+					print('row',row)
+					for s in range(len(row)-2):
+						# ratio_h = 2
+						# ratio_w = 1
+						print('s',s)
+						print('points',len(row),row[s])
+						base_len = math.dist(row[s], row[s + 1])
+						bot_left, bot_right = row[s], row[s + 1]
+						hoo = np.array(bot_right) - np.array( bot_left)
+						if hoo[0]<=0 or hoo[1]<=0:
+							continue
+						start_x, start_y = int(bot_left[0]), int(bot_left[1] - (base_len * 2))
+						end_x, end_y = int(bot_right[0]), int(bot_right[1])
+						if start_y < 0:
+										start_y = 0
+						print('start_y, end_y, start_x, end_x',start_y, end_y, start_x, end_x)
+						print(np.shape(img))
+						cropped = img[start_y: end_y, start_x: end_x]
+						print('np.shape(cropped)',np.shape(cropped))
+						if np.shape(cropped)[1]<=1:
+							continue
+						img_count += 1
+						print("cropped",cropped,len(cropped),np.shape(cropped))
+						cv2.imwrite('./test_data/crop_data_image' + str(img_count) + '.jpeg', cropped)
+						print(folder_path + 'data' + str(img_count) + '.jpeg')
 				return img_count
 
 
@@ -198,7 +211,12 @@ while(True):
 				cv2.drawMarker(frame3, position=point, color=(0, 0, 255))
 		# Final coordinates of the board
 		cv2.imwrite('points.jpeg', frame3)
-		points = augment_points(points)
+		# points = augment_points(points)
+		# for _point in points:
+		# 	for __point in _point:
+		# 		point = (int(__point[0]),int(__point[1]))
+		# 		cv2.drawMarker(frame3, position=point, color=(255, 0, 0))
+		# cv2.imwrite('augmentpoints.jpeg', frame3)
 		break;
 
 img_count=0
