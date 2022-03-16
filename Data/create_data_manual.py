@@ -1,4 +1,6 @@
 import sys
+
+from calibration import get_calibration_data
 sys.path.append('../')
 import glob
 import re
@@ -9,18 +11,9 @@ import scipy.spatial as spatial
 import scipy.cluster as cluster
 from collections import defaultdict
 from statistics import mean
-from cv_chess_functions import (points_by_points, points_by_points_with_perspective_projection, points_by_points_with_twopoint_perspective, read_img,
-															 canny_edge,
-															 hough_line,
-															 h_v_lines,
-															 line_intersections,
-															 cluster_points,
-															 augment_points,
-															 write_crop_images,
-															 grab_cell_files,
-															 classify_cells,
-															 fen_to_image,
-															 atoi,undistort)
+from cv_chess_functions import (points_by_points_with_twopoint_perspective, read_img,
+															 augment_points, undistort,
+															 write_crop_images,)
 pt=[]
 n=0
 #マウスの操作があるとき呼ばれる関数
@@ -37,7 +30,8 @@ def mouse_callback(event, x, y, flags, param):
     #マウスの右ボタンがクリックされたとき
     if event == cv2.EVENT_RBUTTONDOWN:
         print(pt)
-        pt.pop()
+        if len(pt)>0:
+          pt.pop()
 # Read image and do lite image processing
 def read_img(file):
 	img = cv2.imread(str(file), 1)
@@ -171,9 +165,18 @@ imgname=img_filename_list[0]
 cv2.namedWindow('live', cv2.WINDOW_NORMAL)
 cv2.setMouseCallback('live', mouse_callback)
 frame = cv2.imread(imgname)
+frame2 = frame.copy()
 cv2.imshow('live', frame)
+global points
 points = []
+camera,dist=get_calibration_data()
 while(True):
+	frame2 = frame.copy()
+	ptl = np.array( pt )
+	
+
+	cv2.polylines(frame2, [ptl] ,False,(200,10,10))
+	cv2.imshow('live', frame2)
 	if cv2.waitKey(1) & 0xFF == ord(' '):
 		if len(pt)!=6:
 			print('Plese set line')
@@ -184,19 +187,21 @@ while(True):
 
 		# Low-level CV techniques (grayscale & blur)
 		# img, gray_blur = read_img('frame.jpeg')
-		frame2 = frame.copy()
+		frame3 = frame.copy()
 
 
 		points = points_by_points_with_twopoint_perspective(pt)
+		print(points)
 		for _point in points:
 			for __point in _point:
 				point = (int(__point[0]),int(__point[1]))
-				cv2.drawMarker(frame2, position=point, color=(0, 0, 255))
+				cv2.drawMarker(frame3, position=point, color=(0, 0, 255))
 		# Final coordinates of the board
+		cv2.imwrite('points.jpeg', frame3)
 		points = augment_points(points)
 		break;
 
-
+img_count=0
 for file_name in img_filename_list:
 				print(file_name)
 				img, gray_blur = read_img(file_name)
@@ -204,6 +209,7 @@ for file_name in img_filename_list:
 				print(np.shape(gray_blur))
 
 				print('points: ' + str(np.shape(points)))
+				print('POINT'+str(points))
 				img_count = write_crop_images(img, points, img_count)
 				print('img_count: ' + str(img_count))
 				print('PRINTED')

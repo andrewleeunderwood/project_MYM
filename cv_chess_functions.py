@@ -272,7 +272,7 @@ def write_crop_images(img, points, img_count=0, folder_path='./Data/raw_data/'):
     num_list = []
     shape = list(np.shape(points))
     start_point = shape[0] - 14
-
+    print('int(shape[0] / 11)'+str(int(shape[0] / 11)))
     if int(shape[0] / 11) >= 8:
         range_num = 8
     else:
@@ -282,7 +282,7 @@ def write_crop_images(img, points, img_count=0, folder_path='./Data/raw_data/'):
         start = start_point - (row * 11)
         end = (start_point - 8) - (row * 11)
         num_list.append(range(start, end, -1))
-
+    print('num_list:'+str(num_list))
     for row in num_list:
         for s in row:
             # ratio_h = 2
